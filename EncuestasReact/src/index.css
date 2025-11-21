@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Fondo Principal */
+  --color-background-page: #fffffe;
+  /* Fondo Secundario */
+  --color-background-secondary: #e3f6f5;
+  /* Encabezados / Títulos */
+  --color-text-headline: #272343;
+  /* Texto de Contenido */
+  --color-text-paragraph: #2d334a;
+  /* Botón Primario (CTA) */
+  --color-primary: #ffd803;
+  /* Texto de Botón CTA */
+  --color-primary-text: #272343;
+  /* Resaltado/Bordes */
+  --color-highlight: #bae8e8;
+}
+
+body {
+  background-color: var(--color-background-page);
+  color: var(--color-text-paragraph);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text-headline);
+}
