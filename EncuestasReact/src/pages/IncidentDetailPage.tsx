@@ -19,6 +19,8 @@ const IncidentDetailPage: React.FC = () => {
             try {
                 setLoading(true);
                 const data = await CuadrillaService.getIncidenciaById(Number(id));
+
+
                 if (data) {
                     setIncident(data);
                 } else {
@@ -119,8 +121,8 @@ const IncidentDetailPage: React.FC = () => {
                     <div>
                         <h3 className="text-sm font-medium text-text-paragraph mb-1">Estado</h3>
                         <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${incident.estado === 'en_proceso' ? 'bg-yellow-100 text-yellow-800' :
-                                incident.estado === 'finalizada' ? 'bg-green-100 text-green-800' :
-                                    'bg-gray-100 text-gray-800'
+                            incident.estado === 'finalizada' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
                             }`}>
                             {incident.estado}
                         </span>
