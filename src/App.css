@@ -1,0 +1,21 @@
+#root {
+  /* ELIMINADO: max-width: 1280px; */
+  /* ELIMINADO: margin: 0 auto; */
+  /* ELIMINADO: padding: 2rem; */
+  /* ELIMINADO: text-align: center; <--- ESTO ERA LO QUE ROMPÍA TODO */
+
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Si tienes una navbar, asegúrate de que no tenga márgenes raros */
+main {
+  flex: 1;
+}
+
+/* Utilidades rápidas si las necesitas */
+.cursor-pointer {
+  cursor: pointer;
+}
