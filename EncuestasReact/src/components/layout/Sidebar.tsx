@@ -15,7 +15,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
-    const pages = Object.values(municipalPages).filter(page => page.id !== 'loginPage');
+    const pages = Object.values(municipalPages).filter(page => page.id !== 'loginPage' && page.id !== 'incidentDetailPage');
 
     return (
         <>

@@ -1,32 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CuadrillaService } from '../services/cuadrilla.service';
+import { 
+    MagnifyingGlassIcon, 
+    ChevronRightIcon, 
+    MapPinIcon, 
+    CalendarIcon 
+} from '@heroicons/react/24/outline';
 
 interface Incidencia {
     id: number;
     titulo: string;
     descripcion: string;
     estado: string;
-    fecha_creacion: string;
+    creadoEl: string;
+    ubicacion?: string; // Asumiendo que viene del backend
 }
 
 const CuadrillaIncidentsPage: React.FC = () => {
     const navigate = useNavigate();
     const [incidencias, setIncidencias] = useState<Incidencia[]>([]);
+    const [filteredIncidencias, setFilteredIncidencias] = useState<Incidencia[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedIncidencia, setSelectedIncidencia] = useState<Incidencia | null>(null);
-    const [comentario, setComentario] = useState('');
-    const [evidenciaUrl, setEvidenciaUrl] = useState('');
-    const [showModal, setShowModal] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         loadIncidencias();
     }, []);
 
+    useEffect(() => {
+        // Lógica de filtrado en cliente
+        const filtered = incidencias.filter(inc => 
+            inc.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            inc.id.toString().includes(searchTerm) ||
+            inc.estado.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        setFilteredIncidencias(filtered);
+    }, [searchTerm, incidencias]);
+
     const loadIncidencias = async () => {
         try {
             const data = await CuadrillaService.getIncidencias();
             setIncidencias(data);
+            setFilteredIncidencias(data);
         } catch (error) {
             console.error('Error loading incidencias', error);
         } finally {
@@ -34,137 +50,135 @@ const CuadrillaIncidentsPage: React.FC = () => {
         }
     };
 
-    const handleResolverClick = (incidencia: Incidencia) => {
-        setSelectedIncidencia(incidencia);
-        setShowModal(true);
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleDateString('es-CL', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     };
 
-    const handleResolverSubmit = async () => {
-        if (!selectedIncidencia) return;
-
-        try {
-            await CuadrillaService.resolverIncidencia(selectedIncidencia.id, {
-                comentario,
-                evidencia_urls: [evidenciaUrl]
-            });
-            setShowModal(false);
-            setComentario('');
-            setEvidenciaUrl('');
-            loadIncidencias();
-        } catch (error) {
-            console.error('Error resolving incidencia', error);
-            alert('Error al resolver la incidencia');
+    // Helper para estilos de estado
+    const getStatusStyle = (status: string) => {
+        switch (status) {
+            case 'finalizada':
+                return 'bg-green-100 text-green-800 border-green-200';
+            case 'en_proceso':
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'rechazada':
+                return 'bg-red-100 text-red-800 border-red-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     };
 
+    const getStatusLabel = (status: string) => {
+        return status.replace('_', ' ').toUpperCase();
+    };
+
     return (
-        <div className="p-6 bg-background-page min-h-screen">
-            <h1 className="text-3xl font-bold text-text-headline mb-6">Incidencias Asignadas</h1>
-
-            {loading ? (
-                <div className="text-center">Cargando...</div>
-            ) : (
-                <div className="overflow-x-auto bg-white rounded-lg shadow border border-highlight">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-background-secondary">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-text-headline uppercase tracking-wider">ID</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-text-headline uppercase tracking-wider">Título</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-text-headline uppercase tracking-wider">Estado</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-text-headline uppercase tracking-wider">Fecha</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-text-headline uppercase tracking-wider">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {incidencias.map((incidencia) => (
-                                <tr key={incidencia.id}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-paragraph">{incidencia.id}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-paragraph">{incidencia.titulo}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-paragraph">
-                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${incidencia.estado === 'RESUELTA' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                            }`}>
-                                            {incidencia.estado}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-text-paragraph">{new Date(incidencia.fecha_creacion).toLocaleDateString()}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                        <button
-                                            onClick={() => navigate(`/cuadrilla/incidencias/${incidencia.id}`)}
-                                            className="text-blue-600 hover:text-blue-900"
-                                        >
-                                            Ver Detalle
-                                        </button>
-                                        <button
-                                            onClick={() => handleResolverClick(incidencia)}
-                                            className="text-primary-text bg-primary hover:opacity-80 px-3 py-1 rounded-md"
-                                        >
-                                            Resolver
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-
-            {/* Modal */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto outline-none focus:outline-none bg-black bg-opacity-50">
-                    <div className="relative w-full max-w-lg mx-auto my-6">
-                        <div className="relative flex flex-col w-full bg-white border-0 rounded-lg shadow-lg outline-none focus:outline-none">
-                            <div className="flex items-start justify-between p-5 border-b border-solid border-gray-300 rounded-t bg-background-secondary">
-                                <h3 className="text-xl font-semibold text-text-headline">
-                                    Resolver Incidencia #{selectedIncidencia?.id}
-                                </h3>
-                                <button
-                                    className="p-1 ml-auto bg-transparent border-0 text-black float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
-                                    onClick={() => setShowModal(false)}
-                                >
-                                    <span className="text-black h-6 w-6 text-2xl block outline-none focus:outline-none">×</span>
-                                </button>
-                            </div>
-                            <div className="relative p-6 flex-auto">
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-text-paragraph mb-2">Comentario</label>
-                                    <textarea
-                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                        rows={3}
-                                        value={comentario}
-                                        onChange={(e) => setComentario(e.target.value)}
-                                    />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-text-paragraph mb-2">URL Evidencia (Mock)</label>
-                                    <input
-                                        type="text"
-                                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                        value={evidenciaUrl}
-                                        onChange={(e) => setEvidenciaUrl(e.target.value)}
-                                        placeholder="https://example.com/image.jpg"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex items-center justify-end p-6 border-t border-solid border-gray-300 rounded-b">
-                                <button
-                                    className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    className="bg-primary text-primary-text font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
-                                    type="button"
-                                    onClick={handleResolverSubmit}
-                                >
-                                    Guardar Resolución
-                                </button>
-                            </div>
+        <div className="min-h-screen bg-gray-50 p-6 md:p-8">
+            <div className="max-w-7xl mx-auto">
+                
+                {/* Header & Search */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900">Incidencias Asignadas</h1>
+                        <p className="text-gray-500 mt-1">Gestiona el trabajo diario de tu cuadrilla</p>
+                    </div>
+                    
+                    <div className="relative w-full md:w-72">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                         </div>
+                        <input
+                            type="text"
+                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out shadow-sm"
+                            placeholder="Buscar por ID, título o estado..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
                 </div>
-            )}
+
+                {/* Content */}
+                {loading ? (
+                    <div className="flex justify-center items-center h-64">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalles</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {filteredIncidencias.length > 0 ? (
+                                        filteredIncidencias.map((incidencia) => (
+                                            <tr 
+                                                key={incidencia.id} 
+                                                className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                                                onClick={() => navigate(`/cuadrilla/incidencias/${incidencia.id}`)}
+                                            >
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    #{incidencia.id}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-semibold text-gray-900">{incidencia.titulo}</span>
+                                                        {incidencia.ubicacion && (
+                                                            <span className="flex items-center text-xs text-gray-500 mt-1">
+                                                                <MapPinIcon className="h-3 w-3 mr-1" />
+                                                                {incidencia.ubicacion}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusStyle(incidencia.estado)}`}>
+                                                        {getStatusLabel(incidencia.estado)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <div className="flex items-center">
+                                                        <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
+                                                        {formatDate(incidencia.creadoEl)}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button 
+                                                        className="text-gray-400 hover:text-blue-600 group-hover:translate-x-1 transition-transform"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/cuadrilla/incidencias/${incidencia.id}`);
+                                                        }}
+                                                    >
+                                                        <ChevronRightIcon className="h-5 w-5" />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                                No se encontraron incidencias que coincidan con tu búsqueda.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
