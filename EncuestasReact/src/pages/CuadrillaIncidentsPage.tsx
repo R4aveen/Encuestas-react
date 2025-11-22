@@ -11,10 +11,8 @@ import {
     CheckCircleIcon,
     XCircleIcon,
     ExclamationCircleIcon,
-    ArrowRightIcon
 } from '@heroicons/react/24/outline';
 
-// Usamos tus componentes UI
 import UiCard from '../components/ui/UiCard';
 import UiButton from '../components/ui/UiButton';
 
@@ -66,7 +64,6 @@ const CuadrillaIncidentsPage: React.FC = () => {
         });
     };
 
-    // --- NUEVO DISEÑO DE BADGES CON ICONOS ---
     const getStatusBadge = (status: string) => {
         const config: any = {
             'finalizada': {
@@ -113,7 +110,6 @@ const CuadrillaIncidentsPage: React.FC = () => {
     return (
         <div className="bg-light min-vh-100 py-5">
             <Container>
-                {/* Header y Buscador */}
                 <Row className="mb-5 align-items-center g-3">
                     <Col md={6}>
                         <h2 className="fw-bold text-dark mb-1 display-6">Incidencias Asignadas</h2>
@@ -135,7 +131,6 @@ const CuadrillaIncidentsPage: React.FC = () => {
                     </Col>
                 </Row>
 
-                {/* Contenido Principal */}
                 {loading ? (
                     <div className="text-center py-5">
                         <Spinner animation="border" variant="primary" />

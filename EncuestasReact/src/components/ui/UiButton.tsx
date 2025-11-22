@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import { forwardRef } from 'react';
 import { Button, Spinner, type ButtonProps } from 'react-bootstrap';
 
 interface UiButtonProps extends ButtonProps {
@@ -6,7 +6,6 @@ interface UiButtonProps extends ButtonProps {
     isBlock?: boolean;
 }
 
-// Usamos forwardRef para que el componente pueda recibir referencias (refs) correctamente
 const UiButton = forwardRef<HTMLButtonElement, UiButtonProps>(({
     children,
     loading = false,
@@ -18,7 +17,7 @@ const UiButton = forwardRef<HTMLButtonElement, UiButtonProps>(({
 }, ref) => {
     return (
         <Button
-            ref={ref} // Pasamos la referencia al botón de Bootstrap
+            ref={ref}
             {...props}
             variant={variant}
             disabled={disabled || loading}
@@ -39,7 +38,6 @@ const UiButton = forwardRef<HTMLButtonElement, UiButtonProps>(({
     );
 });
 
-// ESTA LÍNEA ES LA QUE ARREGLA TU ERROR
 UiButton.displayName = 'UiButton';
 
 export default UiButton;

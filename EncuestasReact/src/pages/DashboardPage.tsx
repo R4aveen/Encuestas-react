@@ -17,7 +17,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { CuadrillaService } from '../services/cuadrilla.service';
 
-// Registrar componentes de Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DashboardPage: React.FC = () => {
@@ -42,7 +41,6 @@ const DashboardPage: React.FC = () => {
         fetchStats();
     }, []);
 
-    // Configuración del Gráfico
     const chartData = {
         labels: ['Pendientes', 'Finalizadas', 'Otras'],
         datasets: [
@@ -54,9 +52,9 @@ const DashboardPage: React.FC = () => {
                     stats.total - (stats.pendientes + stats.resueltas)
                 ],
                 backgroundColor: [
-                    '#ffc107', // Warning (Pendientes)
-                    '#198754', // Success (Finalizadas)
-                    '#adb5bd', // Secondary (Otras)
+                    '#ffc107',
+                    '#198754',
+                    '#adb5bd',
                 ],
                 borderWidth: 0,
                 hoverOffset: 4
@@ -76,7 +74,6 @@ const DashboardPage: React.FC = () => {
         cutout: '75%',
     };
 
-    // Datos de las tarjetas superiores (KPIs)
     const statCards = [
         {
             title: 'Total Asignadas',
@@ -110,7 +107,6 @@ const DashboardPage: React.FC = () => {
     return (
         <div className="bg-light min-vh-100 py-5">
             <Container>
-                {/* HEADER */}
                 <div className="mb-5">
                     <h2 className="fw-bold text-dark mb-1">Dashboard Operativo</h2>
                     <p className="text-muted">Resumen de actividad y métricas de rendimiento.</p>
@@ -118,7 +114,6 @@ const DashboardPage: React.FC = () => {
 
                 {error && <Alert variant="danger" className="mb-4 shadow-sm border-0">{error}</Alert>}
 
-                {/* 1. KPIs (Tarjetas Superiores) */}
                 <Row className="g-4 mb-5">
                     {statCards.map((stat, index) => (
                         <Col md={4} key={index}>
@@ -129,9 +124,7 @@ const DashboardPage: React.FC = () => {
                                         <h2 className="fw-bold text-dark mb-0 display-6">{stat.value}</h2>
                                         <small className="text-muted mt-1 d-block">{stat.desc}</small>
                                     </div>
-                                    {/* ÍCONO CON FONDO DE COLOR SUAVE */}
                                     <div className={`bg-${stat.variant} bg-opacity-10 p-3 rounded-4 text-${stat.variant}`}>
-                                        {/* AQUÍ ESTÁ EL ARREGLO: style={{ width: 32 }} */}
                                         <stat.icon style={{ width: '32px', height: '32px' }} />
                                     </div>
                                 </Card.Body>
@@ -140,9 +133,7 @@ const DashboardPage: React.FC = () => {
                     ))}
                 </Row>
 
-                {/* 2. SECCIÓN PRINCIPAL (Gráfico + Bienvenida) */}
                 <Row className="g-4">
-                    {/* Gráfico */}
                     <Col lg={4}>
                         <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '16px' }}>
                             <Card.Body className="p-4">
@@ -152,7 +143,6 @@ const DashboardPage: React.FC = () => {
                                 </div>
                                 <div style={{ height: '250px', position: 'relative' }}>
                                     <Doughnut data={chartData} options={chartOptions} />
-                                    {/* Texto Central */}
                                     <div className="position-absolute top-50 start-50 translate-middle text-center" style={{ pointerEvents: 'none' }}>
                                         <h3 className="fw-bold mb-0">{stats.total}</h3>
                                         <small className="text-muted text-uppercase" style={{ fontSize: '0.7rem' }}>Total</small>
@@ -162,11 +152,9 @@ const DashboardPage: React.FC = () => {
                         </Card>
                     </Col>
 
-                    {/* Panel de Bienvenida / Acción */}
                     <Col lg={8}>
                         <Card className="border-0 shadow-sm h-100 bg-primary text-white overflow-hidden" style={{ borderRadius: '16px' }}>
                             <div className="position-absolute top-0 end-0 p-5 opacity-25">
-                                {/* Decoración de fondo */}
                                 <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <circle cx="100" cy="100" r="100" fill="white" />
                                 </svg>

@@ -26,17 +26,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (error: any) {
             console.error('Login failed', error);
 
-            // Throw a more descriptive error
             if (error.response) {
-                // Check for non_field_errors (Django format)
                 if (error.response.data?.non_field_errors) {
                     throw new Error(error.response.data.non_field_errors[0]);
                 }
-                // Check for detail field
                 else if (error.response.data?.detail) {
                     throw new Error(error.response.data.detail);
                 }
-                // Generic error
                 else {
                     throw new Error('Credenciales inválidas');
                 }

@@ -22,11 +22,11 @@ const UiModal: React.FC<UiModalProps> = ({
         <Modal
             show={show}
             onHide={handleClose}
-            centered // ESTO ES CLAVE PARA QUE FLOTE AL MEDIO
+            centered
             size={size}
             backdrop="static"
             keyboard={false}
-            contentClassName="border-0 shadow-lg rounded-4" // Bordes redondeados modernos
+            contentClassName="border-0 shadow-lg rounded-4"
         >
             <Modal.Header closeButton className="border-0 pb-0">
                 <Modal.Title className="fw-bold h5 text-dark">{title}</Modal.Title>

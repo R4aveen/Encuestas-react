@@ -13,7 +13,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
     return (
         <Navbar bg="white" className="border-bottom sticky-top" style={{ height: '64px', zIndex: 99 }}>
             <Container fluid className="px-3">
-                {/* Botón Menú (Solo móvil) */}
                 <Button
                     variant="light"
                     className="d-lg-none me-3 p-1 border-0 bg-transparent text-secondary"
@@ -22,10 +21,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                     <Bars3Icon style={{ width: '28px', height: '28px' }} />
                 </Button>
 
-                {/* Espaciador */}
                 <div className="me-auto"></div>
 
-                {/* Perfil de Usuario */}
                 <div className="d-flex align-items-center">
                     <Dropdown align="end">
                         <Dropdown.Toggle variant="light" id="user-dropdown" className="d-flex align-items-center gap-2 border-0 bg-transparent text-dark p-1 no-arrow">

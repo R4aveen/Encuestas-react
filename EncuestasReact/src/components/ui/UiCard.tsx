@@ -5,7 +5,7 @@ interface UiCardProps {
     header?: React.ReactNode;
     children: React.ReactNode;
     className?: string;
-    noPadding?: boolean; // <--- AGREGADO AQUÍ
+    noPadding?: boolean;
 }
 
 const UiCard: React.FC<UiCardProps> = ({ header, children, className = '', noPadding = false }) => {
@@ -18,7 +18,6 @@ const UiCard: React.FC<UiCardProps> = ({ header, children, className = '', noPad
                     </div>
                 </Card.Header>
             )}
-            {/* Aquí usamos la lógica de noPadding */}
             <Card.Body className={noPadding ? 'p-0 rounded-bottom-4 overflow-hidden' : 'p-4'}>
                 {children}
             </Card.Body>

@@ -17,24 +17,19 @@ const IncidentDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
 
-    // --- ESTADOS ---
     const [incident, setIncident] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [processing, setProcessing] = useState(false);
 
-    // --- MODALES ---
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
-
-    // --- FORMULARIOS ---
     const [comentarioFinal, setComentarioFinal] = useState('');
     const [evidenciaNombre, setEvidenciaNombre] = useState('');
     const [rejectReason, setRejectReason] = useState('');
     const [evidenciaFiles, setEvidenciaFiles] = useState<File[]>([]);
 
-    // --- CARGA DE DATOS ---
     const fetchIncident = async () => {
         try {
             setLoading(true);
@@ -51,8 +46,6 @@ const IncidentDetailPage: React.FC = () => {
     useEffect(() => {
         if (id) fetchIncident();
     }, [id]);
-
-    // --- LÓGICA DE ACCIONES ---
 
     const handleStartClick = async () => {
         if (!window.confirm('¿Desea iniciar el trabajo en esta incidencia?')) return;
@@ -86,7 +79,6 @@ const IncidentDetailPage: React.FC = () => {
 
             await CuadrillaService.subirEvidencia(Number(id), formData);
 
-            // Limpiar y cerrar
             setEvidenciaFiles([]);
             setEvidenciaNombre('');
             setShowUploadModal(false);
@@ -139,7 +131,6 @@ const IncidentDetailPage: React.FC = () => {
         }
     };
 
-    // --- HELPERS DE ARCHIVOS ---
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setEvidenciaFiles(prev => [...prev, ...Array.from(e.target.files!)]);
@@ -150,7 +141,6 @@ const IncidentDetailPage: React.FC = () => {
         setEvidenciaFiles(prev => prev.filter((_, i) => i !== index));
     };
 
-    // --- HELPERS DE DISEÑO ---
     const getStatusBadge = (status: string) => {
         const map: any = {
             'finalizada': { bg: 'success', text: 'Finalizada' },
@@ -190,7 +180,6 @@ const IncidentDetailPage: React.FC = () => {
     return (
         <div className="bg-light min-vh-100 py-5">
             <Container>
-                {/* BOTÓN VOLVER */}
                 <div className="mb-4">
                     <button
                         onClick={() => navigate('/cuadrilla/incidencias')}
@@ -200,7 +189,6 @@ const IncidentDetailPage: React.FC = () => {
                     </button>
                 </div>
 
-                {/* ENCABEZADO Y ACCIONES */}
                 <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-5 gap-4">
                     <div>
                         <div className="d-flex align-items-center gap-3 mb-2">
@@ -235,9 +223,7 @@ const IncidentDetailPage: React.FC = () => {
                     </div>
                 </div>
 
-                {/* GRID DE INFORMACIÓN */}
                 <Row className="g-4">
-                    {/* DETALLES */}
                     <Col lg={8}>
                         <UiCard header={<><DocumentTextIcon style={{ width: 20 }} className="me-2 text-primary" /> Detalles de la Incidencia</>}>
                             <div className="mb-4">
@@ -273,7 +259,6 @@ const IncidentDetailPage: React.FC = () => {
                         )}
                     </Col>
 
-                    {/* GALERÍA DE EVIDENCIAS */}
                     <Col lg={4}>
                         <UiCard header={<><PhotoIcon style={{ width: 20 }} className="me-2 text-primary" /> Galería de Evidencias</>}>
                             {incident.multimedias && incident.multimedias.length > 0 ? (
@@ -302,7 +287,6 @@ const IncidentDetailPage: React.FC = () => {
                 </Row>
             </Container>
 
-            {/* --- MODAL SUBIR FOTOS --- */}
             <UiModal show={showUploadModal} handleClose={() => setShowUploadModal(false)} title="Subir Evidencias" size="lg">
                 <div className="text-center p-5 bg-white rounded-4 border border-2 border-dashed border-primary mx-auto" style={{ maxWidth: '500px', position: 'relative' }}>
                     <input
@@ -358,7 +342,6 @@ const IncidentDetailPage: React.FC = () => {
                 </div>
             </UiModal>
 
-            {/* --- MODAL FINALIZAR --- */}
             <UiModal show={showFinalizeModal} handleClose={() => setShowFinalizeModal(false)} title="Finalizar Tarea">
                 <Alert variant="info" className="d-flex align-items-center p-2 small mb-3 border-0 shadow-sm rounded-3">
                     <CheckIcon style={{ width: 18 }} className="me-2" /> Recuerda subir las fotos antes de finalizar.
@@ -377,7 +360,6 @@ const IncidentDetailPage: React.FC = () => {
                 </div>
             </UiModal>
 
-            {/* --- MODAL RECHAZAR --- */}
             <UiModal show={showRejectModal} handleClose={() => setShowRejectModal(false)} title="Rechazar Incidencia">
                 <UiField
                     as="textarea"
