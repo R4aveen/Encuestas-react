@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { 
-    Chart as ChartJS, 
-    ArcElement, 
-    Tooltip, 
-    Legend 
+import {
+    Chart as ChartJS,
+    ArcElement,
+    Tooltip,
+    Legend
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
-import { 
-    ChartBarIcon, 
-    CheckCircleIcon, 
-    ClipboardDocumentListIcon, 
+import { Container, Row, Col, Card, Spinner, Button, Alert } from 'react-bootstrap';
+import {
+    ChartBarIcon,
+    CheckCircleIcon,
+    ClipboardDocumentListIcon,
     ClockIcon,
     ArrowRightIcon
 } from '@heroicons/react/24/outline';
@@ -41,158 +42,157 @@ const DashboardPage: React.FC = () => {
         fetchStats();
     }, []);
 
-    // Configuración de datos para el Gráfico
+    // Configuración del Gráfico
     const chartData = {
-        labels: ['Pendientes', 'Finalizadas', 'Otros/Rechazadas'],
+        labels: ['Pendientes', 'Finalizadas', 'Otras'],
         datasets: [
             {
                 label: '# de Incidencias',
                 data: [
-                    stats.pendientes, 
-                    stats.resueltas, 
-                    stats.total - (stats.pendientes + stats.resueltas) // Calculamos el resto
+                    stats.pendientes,
+                    stats.resueltas,
+                    stats.total - (stats.pendientes + stats.resueltas)
                 ],
                 backgroundColor: [
-                    '#F59E0B', // Amber-500 (Pendientes)
-                    '#10B981', // Emerald-500 (Finalizadas)
-                    '#94A3B8', // Slate-400 (Otros)
+                    '#ffc107', // Warning (Pendientes)
+                    '#198754', // Success (Finalizadas)
+                    '#adb5bd', // Secondary (Otras)
                 ],
-                borderColor: [
-                    '#ffffff',
-                    '#ffffff',
-                    '#ffffff',
-                ],
-                borderWidth: 2,
+                borderWidth: 0,
                 hoverOffset: 4
             },
         ],
     };
 
-    // Opciones visuales del gráfico
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: {
                 position: 'bottom' as const,
-                labels: {
-                    usePointStyle: true,
-                    padding: 20,
-                    font: {
-                        family: "'Inter', sans-serif",
-                        size: 12
-                    }
-                }
+                labels: { usePointStyle: true, padding: 20, font: { size: 12 } }
             }
         },
-        cutout: '70%', // Hace la dona más fina y elegante
+        cutout: '75%',
     };
 
-    // Tarjetas de estadísticas superiores
+    // Datos de las tarjetas superiores (KPIs)
     const statCards = [
-        { 
-            title: 'Total Asignadas', 
-            value: stats.total, 
-            icon: ClipboardDocumentListIcon, 
-            color: 'text-blue-600', 
-            bg: 'bg-blue-50',
-            desc: 'Incidencias históricas'
+        {
+            title: 'Total Asignadas',
+            value: stats.total,
+            icon: ClipboardDocumentListIcon,
+            variant: 'primary',
+            desc: 'Histórico completo'
         },
-        { 
-            title: 'En Proceso', 
-            value: stats.pendientes, 
-            icon: ClockIcon, 
-            color: 'text-amber-600', 
-            bg: 'bg-amber-50',
-            desc: 'Requieren atención inmediata'
+        {
+            title: 'En Proceso',
+            value: stats.pendientes,
+            icon: ClockIcon,
+            variant: 'warning',
+            desc: 'Requieren atención'
         },
-        { 
-            title: 'Finalizadas', 
-            value: stats.resueltas, 
-            icon: CheckCircleIcon, 
-            color: 'text-emerald-600', 
-            bg: 'bg-emerald-50',
-            desc: 'Trabajos completados'
+        {
+            title: 'Finalizadas',
+            value: stats.resueltas,
+            icon: CheckCircleIcon,
+            variant: 'success',
+            desc: 'Trabajo completado'
         },
     ];
 
     if (loading) return (
-        <div className="flex justify-center items-center h-screen bg-gray-50">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="d-flex justify-content-center align-items-center vh-100">
+            <Spinner animation="border" variant="primary" />
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 md:p-8">
-            {/* Título */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard Operativo</h1>
-                <p className="text-gray-500 mt-1">Resumen de actividad y métricas de rendimiento.</p>
-            </div>
-
-            {error && (
-                <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 text-red-700 rounded shadow-sm">
-                    <p>{error}</p>
-                </div>
-            )}
-
-            {/* 1. Tarjetas de KPIs (Top) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {statCards.map((stat, index) => (
-                    <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start justify-between hover:shadow-md transition-shadow duration-300">
-                        <div>
-                            <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">{stat.title}</p>
-                            <h3 className="text-3xl font-bold text-gray-900 mt-2">{stat.value}</h3>
-                            <p className="text-xs text-gray-400 mt-1">{stat.desc}</p>
-                        </div>
-                        <div className={`p-3 rounded-lg ${stat.bg}`}>
-                            <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* 2. Sección Principal: Gráfico + Acciones */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* Columna Izquierda: Gráfico */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:col-span-1">
-                    <h2 className="text-lg font-bold text-gray-800 mb-6 flex items-center">
-                        <ChartBarIcon className="h-5 w-5 mr-2 text-gray-400" />
-                        Distribución de Estado
-                    </h2>
-                    <div className="h-64 w-full relative">
-                        <Doughnut data={chartData} options={chartOptions} />
-                        {/* Texto central en la dona */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-3xl font-bold text-gray-800">{stats.total}</span>
-                            <span className="text-xs text-gray-400 uppercase">Total</span>
-                        </div>
-                    </div>
+        <div className="bg-light min-vh-100 py-5">
+            <Container>
+                {/* HEADER */}
+                <div className="mb-5">
+                    <h2 className="fw-bold text-dark mb-1">Dashboard Operativo</h2>
+                    <p className="text-muted">Resumen de actividad y métricas de rendimiento.</p>
                 </div>
 
-                {/* Columna Derecha: Bienvenida y Accesos Rápidos */}
-                <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl shadow-lg p-8 text-white relative overflow-hidden lg:col-span-2 flex flex-col justify-center">
-                    <div className="relative z-10">
-                        <h2 className="text-3xl font-bold mb-4">Gestión de Cuadrillas</h2>
-                        <p className="text-blue-100 text-lg mb-8 max-w-xl">
-                            Bienvenido al panel de control. Desde aquí puedes monitorear el progreso de las tareas asignadas en tiempo real y actualizar el estado de las incidencias.
-                        </p>
-                        
-                        <button 
-                            onClick={() => navigate('/cuadrilla/incidencias')}
-                            className="group bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold shadow-lg hover:bg-blue-50 transition-all flex items-center w-max"
-                        >
-                            Ver Listado de Incidencias
-                            <ArrowRightIcon className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                        </button>
-                    </div>
+                {error && <Alert variant="danger" className="mb-4 shadow-sm border-0">{error}</Alert>}
 
-                    {/* Elementos decorativos de fondo */}
-                    <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-10 blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 rounded-full bg-white opacity-10 blur-2xl"></div>
-                </div>
-            </div>
+                {/* 1. KPIs (Tarjetas Superiores) */}
+                <Row className="g-4 mb-5">
+                    {statCards.map((stat, index) => (
+                        <Col md={4} key={index}>
+                            <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '16px' }}>
+                                <Card.Body className="p-4 d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <h6 className="text-uppercase text-muted small fw-bold mb-2">{stat.title}</h6>
+                                        <h2 className="fw-bold text-dark mb-0 display-6">{stat.value}</h2>
+                                        <small className="text-muted mt-1 d-block">{stat.desc}</small>
+                                    </div>
+                                    {/* ÍCONO CON FONDO DE COLOR SUAVE */}
+                                    <div className={`bg-${stat.variant} bg-opacity-10 p-3 rounded-4 text-${stat.variant}`}>
+                                        {/* AQUÍ ESTÁ EL ARREGLO: style={{ width: 32 }} */}
+                                        <stat.icon style={{ width: '32px', height: '32px' }} />
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+
+                {/* 2. SECCIÓN PRINCIPAL (Gráfico + Bienvenida) */}
+                <Row className="g-4">
+                    {/* Gráfico */}
+                    <Col lg={4}>
+                        <Card className="border-0 shadow-sm h-100" style={{ borderRadius: '16px' }}>
+                            <Card.Body className="p-4">
+                                <div className="d-flex align-items-center mb-4">
+                                    <ChartBarIcon style={{ width: '20px' }} className="text-secondary me-2" />
+                                    <h6 className="fw-bold text-dark mb-0">Distribución de Estado</h6>
+                                </div>
+                                <div style={{ height: '250px', position: 'relative' }}>
+                                    <Doughnut data={chartData} options={chartOptions} />
+                                    {/* Texto Central */}
+                                    <div className="position-absolute top-50 start-50 translate-middle text-center" style={{ pointerEvents: 'none' }}>
+                                        <h3 className="fw-bold mb-0">{stats.total}</h3>
+                                        <small className="text-muted text-uppercase" style={{ fontSize: '0.7rem' }}>Total</small>
+                                    </div>
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+
+                    {/* Panel de Bienvenida / Acción */}
+                    <Col lg={8}>
+                        <Card className="border-0 shadow-sm h-100 bg-primary text-white overflow-hidden" style={{ borderRadius: '16px' }}>
+                            <div className="position-absolute top-0 end-0 p-5 opacity-25">
+                                {/* Decoración de fondo */}
+                                <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="100" cy="100" r="100" fill="white" />
+                                </svg>
+                            </div>
+                            <Card.Body className="p-5 d-flex flex-column justify-content-center position-relative">
+                                <h2 className="fw-bold mb-3">Sistema de Gestión de Cuadrillas</h2>
+                                <p className="lead mb-4 opacity-75" style={{ maxWidth: '600px' }}>
+                                    Bienvenido al panel de control. Desde aquí puedes monitorear el progreso de las tareas asignadas en tiempo real y actualizar el estado de las incidencias.
+                                </p>
+                                <div>
+                                    <Button
+                                        variant="light"
+                                        size="lg"
+                                        onClick={() => navigate('/cuadrilla/incidencias')}
+                                        className="fw-bold px-4 shadow-sm d-inline-flex align-items-center"
+                                        style={{ borderRadius: '10px' }}
+                                    >
+                                        Ver Listado de Incidencias
+                                        <ArrowRightIcon style={{ width: '20px', marginLeft: '10px' }} />
+                                    </Button>
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+            </Container>
         </div>
     );
 };

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Asegúrate de que esta URL coincida con tu configuración de Django
-const BASE_API_URL = '/incidencias/api/incidencias/'; 
+const BASE_API_URL = '/incidencias/api/incidencias/';
 
 const getAuthConfig = () => {
     const token = localStorage.getItem('token');
@@ -47,13 +47,15 @@ export const CuadrillaService = {
     subirEvidencia: async (id: number, formData: FormData) => {
         try {
             const config = getAuthConfig();
+
             const response = await axios.post(
-                `${BASE_API_URL}${id}/subir-evidencia/`, 
-                formData, 
+                `${BASE_API_URL}${id}/subir-evidencia/`,
+                formData,
                 {
                     headers: {
                         ...config.headers,
-                        'Content-Type': 'multipart/form-data',
+                        // ¡IMPORTANTE! ELIMINA LA LÍNEA DE CONTENT-TYPE
+                        // Axios detectará que es FormData y pondrá el header correcto con el 'boundary'
                     }
                 }
             );
@@ -67,7 +69,7 @@ export const CuadrillaService = {
     finalizarIncidencia: async (id: number, comentario: string) => {
         try {
             const response = await axios.post(
-                `${BASE_API_URL}${id}/finalizar/`, 
+                `${BASE_API_URL}${id}/finalizar/`,
                 { comentario }, // Enviamos el comentario en el cuerpo
                 getAuthConfig()
             );
@@ -85,10 +87,10 @@ export const CuadrillaService = {
             throw error;
         }
     },
-    
+
     getEstadisticas: async () => {
-         // ... (Tu lógica de estadísticas existente puede ir aquí)
-         try {
+        // ... (Tu lógica de estadísticas existente puede ir aquí)
+        try {
             const response = await axios.get(BASE_API_URL, getAuthConfig());
             const incidencias = response.data;
             return {
@@ -96,10 +98,10 @@ export const CuadrillaService = {
                 pendientes: incidencias.filter((i: any) => i.estado === 'en_proceso').length,
                 resueltas: incidencias.filter((i: any) => i.estado === 'finalizada').length
             };
-         } catch(error: any) {
-             handleAuthError(error);
-             throw error;
-         }
+        } catch (error: any) {
+            handleAuthError(error);
+            throw error;
+        }
     }
 };
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { Offcanvas, Nav } from 'react-bootstrap';
 import { municipalPages } from '../../config/pages.config';
 import { HomeIcon, WrenchScrewdriverIcon, UserIcon } from '@heroicons/react/24/outline';
 
@@ -14,45 +15,70 @@ interface SidebarProps {
     setIsOpen: (isOpen: boolean) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+// Contenido del Menú (Reutilizable para Desktop y Móvil)
+const SidebarContent = ({ closeMenu }: { closeMenu?: () => void }) => {
     const pages = Object.values(municipalPages).filter(page => page.id !== 'loginPage' && page.id !== 'incidentDetailPage');
 
     return (
-        <>
-            {/* Mobile overlay */}
-            <div
-                className={`fixed inset-0 z-20 bg-black bg-opacity-50 transition-opacity lg:hidden ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setIsOpen(false)}
-            />
+        <div className="h-100 d-flex flex-column bg-white">
+            {/* Logo / Título */}
+            <div className="d-flex align-items-center justify-content-center border-bottom" style={{ height: '64px', minHeight: '64px' }}>
+                <h5 className="fw-bold text-primary m-0">MuniGestión</h5>
+            </div>
 
-            {/* Sidebar */}
-            <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-highlight transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <div className="flex items-center justify-center h-16 bg-background-secondary border-b border-highlight">
-                    <h1 className="text-xl font-bold text-text-headline">MuniGestión</h1>
-                </div>
-
-                <nav className="mt-5 px-2 space-y-1">
+            {/* Links de Navegación */}
+            <div className="flex-grow-1 py-3 px-2 overflow-auto">
+                <Nav className="flex-column gap-1">
                     {pages.map((page) => {
                         const Icon = iconMap[page.icon] || HomeIcon;
                         return (
                             <NavLink
                                 key={page.id}
                                 to={page.to}
+                                onClick={closeMenu}
                                 className={({ isActive }) =>
-                                    `group flex items-center px-2 py-2 text-base font-medium rounded-md transition-colors ${isActive
-                                        ? 'bg-primary text-primary-text'
-                                        : 'text-text-paragraph hover:bg-background-secondary hover:text-text-headline'
+                                    `nav-link d-flex align-items-center rounded-3 px-3 py-2 fw-medium ${isActive
+                                        ? 'bg-primary text-dark shadow-sm'
+                                        : 'text-secondary hover-light'
                                     }`
                                 }
-                                onClick={() => setIsOpen(false)}
+                                style={({ isActive }) => ({
+                                    backgroundColor: isActive ? 'var(--bs-primary)' : 'transparent',
+                                    color: isActive ? '#000' : 'inherit',
+                                    transition: 'all 0.2s'
+                                })}
                             >
-                                <Icon className="mr-4 h-6 w-6 flex-shrink-0" aria-hidden="true" />
+                                {/* IMPORTANTE: Tamaño fijo al icono para que no explote */}
+                                <Icon style={{ width: '20px', height: '20px' }} className="me-3" />
                                 {page.text}
                             </NavLink>
                         );
                     })}
-                </nav>
-            </aside>
+                </Nav>
+            </div>
+
+            {/* Footer del Sidebar (Opcional) */}
+            <div className="p-3 border-top text-center">
+                <small className="text-muted">v1.0.0</small>
+            </div>
+        </div>
+    );
+};
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
+    return (
+        <>
+            {/* Versión Desktop (Panel lateral fijo) */}
+            <div className="d-none d-lg-block border-end shadow-sm" style={{ width: '260px', minWidth: '260px', zIndex: 100 }}>
+                <SidebarContent />
+            </div>
+
+            {/* Versión Móvil (Offcanvas / Drawer) */}
+            <Offcanvas show={isOpen} onHide={() => setIsOpen(false)} responsive="lg" className="d-lg-none border-0">
+                <Offcanvas.Body className="p-0">
+                    <SidebarContent closeMenu={() => setIsOpen(false)} />
+                </Offcanvas.Body>
+            </Offcanvas>
         </>
     );
 };

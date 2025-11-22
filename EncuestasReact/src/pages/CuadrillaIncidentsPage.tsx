@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Form, InputGroup, Spinner, Badge } from 'react-bootstrap';
 import { CuadrillaService } from '../services/cuadrilla.service';
-import { 
-    MagnifyingGlassIcon, 
-    ChevronRightIcon, 
-    MapPinIcon, 
-    CalendarIcon 
+import {
+    MagnifyingGlassIcon,
+    ChevronRightIcon,
+    MapPinIcon,
+    CalendarIcon,
+    ClockIcon,
+    CheckCircleIcon,
+    XCircleIcon,
+    ExclamationCircleIcon,
+    ArrowRightIcon
 } from '@heroicons/react/24/outline';
+
+// Usamos tus componentes UI
+import UiCard from '../components/ui/UiCard';
+import UiButton from '../components/ui/UiButton';
 
 interface Incidencia {
     id: number;
@@ -14,7 +24,7 @@ interface Incidencia {
     descripcion: string;
     estado: string;
     creadoEl: string;
-    ubicacion?: string; // Asumiendo que viene del backend
+    ubicacion?: string;
 }
 
 const CuadrillaIncidentsPage: React.FC = () => {
@@ -29,8 +39,7 @@ const CuadrillaIncidentsPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Lógica de filtrado en cliente
-        const filtered = incidencias.filter(inc => 
+        const filtered = incidencias.filter(inc =>
             inc.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
             inc.id.toString().includes(searchTerm) ||
             inc.estado.toLowerCase().includes(searchTerm.toLowerCase())
@@ -53,132 +62,167 @@ const CuadrillaIncidentsPage: React.FC = () => {
     const formatDate = (dateString: string) => {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('es-CL', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+            year: 'numeric', month: 'short', day: 'numeric'
         });
     };
 
-    // Helper para estilos de estado
-    const getStatusStyle = (status: string) => {
-        switch (status) {
-            case 'finalizada':
-                return 'bg-green-100 text-green-800 border-green-200';
-            case 'en_proceso':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-            case 'rechazada':
-                return 'bg-red-100 text-red-800 border-red-200';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-200';
-        }
-    };
+    // --- NUEVO DISEÑO DE BADGES CON ICONOS ---
+    const getStatusBadge = (status: string) => {
+        const config: any = {
+            'finalizada': {
+                bg: 'success',
+                text: 'white',
+                icon: CheckCircleIcon,
+                label: 'Finalizada'
+            },
+            'en_proceso': {
+                bg: 'warning',
+                text: 'dark',
+                icon: ClockIcon,
+                label: 'En Proceso'
+            },
+            'rechazada': {
+                bg: 'danger',
+                text: 'white',
+                icon: XCircleIcon,
+                label: 'Rechazada'
+            },
+            'pendiente': {
+                bg: 'secondary',
+                text: 'white',
+                icon: ExclamationCircleIcon,
+                label: 'Pendiente'
+            }
+        };
 
-    const getStatusLabel = (status: string) => {
-        return status.replace('_', ' ').toUpperCase();
+        const st = config[status] || config['pendiente'];
+        const Icon = st.icon;
+
+        return (
+            <Badge
+                bg={st.bg}
+                text={st.text}
+                className="px-3 py-2 rounded-pill fw-medium shadow-sm d-inline-flex align-items-center gap-2 border border-light"
+            >
+                <Icon style={{ width: 16, height: 16 }} />
+                <span className="text-uppercase" style={{ fontSize: '0.75rem', letterSpacing: '0.5px' }}>{st.label}</span>
+            </Badge>
+        );
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                
-                {/* Header & Search */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Incidencias Asignadas</h1>
-                        <p className="text-gray-500 mt-1">Gestiona el trabajo diario de tu cuadrilla</p>
-                    </div>
-                    
-                    <div className="relative w-full md:w-72">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                            type="text"
-                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition duration-150 ease-in-out shadow-sm"
-                            placeholder="Buscar por ID, título o estado..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
+        <div className="bg-light min-vh-100 py-5">
+            <Container>
+                {/* Header y Buscador */}
+                <Row className="mb-5 align-items-center g-3">
+                    <Col md={6}>
+                        <h2 className="fw-bold text-dark mb-1 display-6">Incidencias Asignadas</h2>
+                        <p className="text-secondary mb-0 fs-6">Gestiona y actualiza el trabajo diario de tu cuadrilla</p>
+                    </Col>
+                    <Col md={6} lg={4} className="ms-auto">
+                        <InputGroup className="shadow-sm rounded-pill overflow-hidden border-0 bg-white p-1">
+                            <InputGroup.Text className="bg-transparent border-0 ps-3">
+                                <MagnifyingGlassIcon style={{ width: 20 }} className="text-primary opacity-75" />
+                            </InputGroup.Text>
+                            <Form.Control
+                                type="text"
+                                placeholder="Buscar por ID, título o estado..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="border-0 shadow-none bg-transparent"
+                            />
+                        </InputGroup>
+                    </Col>
+                </Row>
 
-                {/* Content */}
+                {/* Contenido Principal */}
                 {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <div className="text-center py-5">
+                        <Spinner animation="border" variant="primary" />
+                        <p className="mt-2 text-muted">Cargando lista...</p>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
+                    <UiCard className="overflow-hidden border-0 shadow-sm" noPadding>
+                        <div className="table-responsive">
+                            <table className="table table-hover align-middle mb-0">
+                                <thead className="bg-light">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalles</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
+                                        <th className="px-4 py-4 text-secondary small text-uppercase fw-bold border-0" style={{ width: '80px' }}>ID</th>
+                                        <th className="px-4 py-4 text-secondary small text-uppercase fw-bold border-0">Detalles del Problema</th>
+                                        <th className="px-4 py-4 text-secondary small text-uppercase fw-bold border-0 text-center">Estado Actual</th>
+                                        <th className="px-4 py-4 text-secondary small text-uppercase fw-bold border-0">Fecha Creación</th>
+                                        <th className="px-4 py-4 text-secondary small text-uppercase fw-bold border-0 text-end">Acción</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
+                                <tbody>
                                     {filteredIncidencias.length > 0 ? (
                                         filteredIncidencias.map((incidencia) => (
-                                            <tr 
-                                                key={incidencia.id} 
-                                                className="hover:bg-gray-50 transition-colors cursor-pointer group"
+                                            <tr
+                                                key={incidencia.id}
+                                                style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
                                                 onClick={() => navigate(`/cuadrilla/incidencias/${incidencia.id}`)}
+                                                className="group-hover-row"
                                             >
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    #{incidencia.id}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-sm font-semibold text-gray-900">{incidencia.titulo}</span>
-                                                        {incidencia.ubicacion && (
-                                                            <span className="flex items-center text-xs text-gray-500 mt-1">
-                                                                <MapPinIcon className="h-3 w-3 mr-1" />
-                                                                {incidencia.ubicacion}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStatusStyle(incidencia.estado)}`}>
-                                                        {getStatusLabel(incidencia.estado)}
+                                                <td className="px-4 py-4">
+                                                    <span className="fw-bold text-primary bg-primary bg-opacity-10 px-2 py-1 rounded">
+                                                        #{incidencia.id}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    <div className="flex items-center">
-                                                        <CalendarIcon className="h-4 w-4 mr-1 text-gray-400" />
+                                                <td className="px-4 py-4">
+                                                    <div className="fw-bold text-dark mb-1 fs-6">{incidencia.titulo}</div>
+                                                    {incidencia.ubicacion ? (
+                                                        <div className="text-muted small d-flex align-items-center">
+                                                            <MapPinIcon style={{ width: 14, height: 14, marginRight: 4 }} className="text-danger opacity-75" />
+                                                            {incidencia.ubicacion}
+                                                        </div>
+                                                    ) : (
+                                                        <div className="text-muted small fst-italic">Sin ubicación</div>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-4 text-center">
+                                                    {getStatusBadge(incidencia.estado)}
+                                                </td>
+                                                <td className="px-4 py-4">
+                                                    <div className="d-flex align-items-center text-muted small fw-medium">
+                                                        <CalendarIcon style={{ width: 16, height: 16, marginRight: 8 }} className="text-primary opacity-75" />
                                                         {formatDate(incidencia.creadoEl)}
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button 
-                                                        className="text-gray-400 hover:text-blue-600 group-hover:translate-x-1 transition-transform"
-                                                        onClick={(e) => {
+                                                <td className="px-4 py-4 text-end">
+                                                    <UiButton
+                                                        variant="light"
+                                                        size="sm"
+                                                        className="rounded-circle p-2 shadow-sm border hover-shadow"
+                                                        style={{ width: 40, height: 40 }}
+                                                        onClick={(e: any) => {
                                                             e.stopPropagation();
                                                             navigate(`/cuadrilla/incidencias/${incidencia.id}`);
                                                         }}
                                                     >
-                                                        <ChevronRightIcon className="h-5 w-5" />
-                                                    </button>
+                                                        <ChevronRightIcon style={{ width: 20 }} className="text-primary" />
+                                                    </UiButton>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                                No se encontraron incidencias que coincidan con tu búsqueda.
+                                            <td colSpan={5} className="text-center py-5 text-muted">
+                                                <div className="d-flex flex-column align-items-center py-4">
+                                                    <div className="bg-light rounded-circle p-4 mb-3">
+                                                        <MagnifyingGlassIcon style={{ width: 32, opacity: 0.4 }} />
+                                                    </div>
+                                                    <h6 className="fw-bold text-secondary">No se encontraron resultados</h6>
+                                                    <p className="small mb-0">Intenta con otro término de búsqueda</p>
+                                                </div>
                                             </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </UiCard>
                 )}
-            </div>
+            </Container>
         </div>
     );
 };

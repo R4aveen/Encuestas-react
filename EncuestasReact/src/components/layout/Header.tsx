@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Bars3Icon } from '@heroicons/react/24/outline';
+import { Bars3Icon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { Navbar, Container, Button, Dropdown } from 'react-bootstrap';
 
 interface HeaderProps {
     toggleSidebar: () => void;
@@ -10,28 +11,39 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
     const { logout } = useAuth();
 
     return (
-        <header className="bg-white border-b border-highlight h-16 flex items-center justify-between px-4 lg:px-6">
-            <button
-                className="lg:hidden p-2 rounded-md text-text-paragraph hover:bg-background-secondary focus:outline-none"
-                onClick={toggleSidebar}
-            >
-                <Bars3Icon className="h-6 w-6" />
-            </button>
+        <Navbar bg="white" className="border-bottom sticky-top" style={{ height: '64px', zIndex: 99 }}>
+            <Container fluid className="px-3">
+                {/* Botón Menú (Solo móvil) */}
+                <Button
+                    variant="light"
+                    className="d-lg-none me-3 p-1 border-0 bg-transparent text-secondary"
+                    onClick={toggleSidebar}
+                >
+                    <Bars3Icon style={{ width: '28px', height: '28px' }} />
+                </Button>
 
-            <div className="flex-1 flex justify-end items-center">
-                <div className="flex items-center space-x-4">
-                    <span className="text-sm font-medium text-text-paragraph hidden sm:block">
-                        Usuario
-                    </span>
-                    <button
-                        onClick={logout}
-                        className="text-sm font-medium text-red-600 hover:text-red-800"
-                    >
-                        Cerrar Sesión
-                    </button>
+                {/* Espaciador */}
+                <div className="me-auto"></div>
+
+                {/* Perfil de Usuario */}
+                <div className="d-flex align-items-center">
+                    <Dropdown align="end">
+                        <Dropdown.Toggle variant="light" id="user-dropdown" className="d-flex align-items-center gap-2 border-0 bg-transparent text-dark p-1 no-arrow">
+                            <span className="d-none d-md-block fw-medium small">Usuario</span>
+                            <div className="bg-light rounded-circle p-1 border">
+                                <UserCircleIcon style={{ width: '24px', height: '24px' }} className="text-secondary" />
+                            </div>
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu className="shadow-sm border-0 mt-2 rounded-3">
+                            <Dropdown.Item onClick={logout} className="text-danger small fw-medium">
+                                Cerrar Sesión
+                            </Dropdown.Item>
+                        </Dropdown.Menu>
+                    </Dropdown>
                 </div>
-            </div>
-        </header>
+            </Container>
+        </Navbar>
     );
 };
 

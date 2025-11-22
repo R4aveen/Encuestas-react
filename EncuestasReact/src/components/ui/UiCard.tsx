@@ -1,126 +1,29 @@
-import {  forwardRef, type FC, type HTMLAttributes, type ReactNode } from 'react';
-import classNames from 'classnames';
-import { Card, Collapse } from 'react-bootstrap';
+import React from 'react';
+import { Card } from 'react-bootstrap';
 
-export type TRounded = '0' | '1' | '2' | '3' | 'circle' | 'pill';
-
-interface ICardTitleProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-}
-export const CardTitle: FC<ICardTitleProps> = ({ children, className, ...rest }) => {
-    const classes = classNames('d-flex align-items-center h5 fw-bold mb-0', className);
-    return (
-        <div data-component-name='Card/CardTitle' className={classes} {...rest}>
-            {children}
-        </div>
-    );
-};
-
-interface ICardHeaderChildProps extends HTMLAttributes<HTMLDivElement> {
-    children?: ReactNode;
-}
-export const CardHeaderChild: FC<ICardHeaderChildProps> = ({ children, className, ...rest }) => {
-    const classes = classNames('d-flex flex-wrap align-items-start gap-3', className);
-    return (
-        <div data-component-name='Card/CardHeaderChild' className={classes} {...rest}>
-            {children}
-        </div>
-    );
-};
-
-interface ICardHeaderProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-}
-export const CardHeader: FC<ICardHeaderProps> = ({ children, className, ...rest }) => {
-    const classes = classNames(
-        'd-flex flex-wrap align-items-center justify-content-between gap-3 px-4 pt-4 pb-3 bg-transparent border-bottom-0',
-        className
-    );
-    return (
-        <Card.Header data-component-name='Card/CardHeader' className={classes} {...rest}>
-            {children}
-        </Card.Header>
-    );
-};
-
-interface ICardBodyProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-}
-export const CardBody: FC<ICardBodyProps> = ({ children, className, ...rest }) => {
-    const classes = classNames('flex-grow-1 px-4 pb-4', className);
-    return (
-        <Card.Body data-component-name='Card/CardBody' className={classes} {...rest}>
-            {children}
-        </Card.Body>
-    );
-};
-
-interface ICardBodyCollapseProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-    isOpen: boolean;
-}
-export const CardBodyCollapse: FC<ICardBodyCollapseProps> = ({ children, className, isOpen, ...rest }) => {
-    return (
-        <Collapse in={isOpen}>
-            <div data-component-name='Card/CardBodyCollapse'>
-                <Card.Body className={classNames('px-4 pb-4', className)} {...rest}>
-                    {children}
-                </Card.Body>
-            </div>
-        </Collapse>
-    );
-};
-
-interface ICardFooterChildProps extends HTMLAttributes<HTMLDivElement> {
-    children?: ReactNode;
-}
-export const CardFooterChild: FC<ICardFooterChildProps> = ({ children, className, ...rest }) => {
-    const classes = classNames('d-flex flex-wrap align-items-center gap-3', className);
-    return (
-        <div data-component-name='Card/CardFooterChild' className={classes} {...rest}>
-            {children}
-        </div>
-    );
-};
-
-interface ICardFooterProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-}
-export const CardFooter: FC<ICardFooterProps> = ({ children, className, ...rest }) => {
-    const classes = classNames(
-        'd-flex flex-wrap align-items-center justify-content-between gap-3 px-4 pb-4 pt-3 bg-transparent border-top-0',
-        className
-    );
-    return (
-        <Card.Footer data-component-name='Card/CardFooter' className={classes} {...rest}>
-            {children}
-        </Card.Footer>
-    );
-};
-
-interface ICardProps extends HTMLAttributes<HTMLDivElement> {
-    children: ReactNode;
-    rounded?: TRounded;
+interface UiCardProps {
+    header?: React.ReactNode;
+    children: React.ReactNode;
+    className?: string;
+    noPadding?: boolean; // <--- AGREGADO AQUÍ
 }
 
-const CardComponent = forwardRef<HTMLDivElement, ICardProps>((props, ref) => {
-    const { children, className, rounded = '3', ...rest } = props;
-
-    // Clases base de Bootstrap para Cards modernas
-    const cardClasses = classNames(
-        'd-flex flex-col border-0 shadow-sm', // Estilos modernos (sin borde, con sombra)
-        { [`rounded-${rounded}`]: rounded },
-        'bg-white', // Fondo blanco por defecto
-        className
-    );
-
+const UiCard: React.FC<UiCardProps> = ({ header, children, className = '', noPadding = false }) => {
     return (
-        <Card ref={ref} data-component-name='Card' className={cardClasses} {...rest}>
-            {children}
+        <Card className={`border-0 shadow-sm h-100 ${className}`} style={{ borderRadius: '16px', backgroundColor: '#fff' }}>
+            {header && (
+                <Card.Header className="bg-transparent border-bottom-0 pt-4 px-4 pb-0">
+                    <div className="fw-bold text-secondary text-uppercase small d-flex align-items-center gap-2" style={{ letterSpacing: '0.5px' }}>
+                        {header}
+                    </div>
+                </Card.Header>
+            )}
+            {/* Aquí usamos la lógica de noPadding */}
+            <Card.Body className={noPadding ? 'p-0 rounded-bottom-4 overflow-hidden' : 'p-4'}>
+                {children}
+            </Card.Body>
         </Card>
     );
-});
+};
 
-CardComponent.displayName = 'UiCard';
-
-export default CardComponent;
+export default UiCard;

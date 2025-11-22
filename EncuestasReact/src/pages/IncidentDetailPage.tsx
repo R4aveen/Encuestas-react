@@ -1,186 +1,100 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Badge, Alert, Image, Spinner } from 'react-bootstrap';
 import { CuadrillaService } from '../services/cuadrilla.service';
-import { 
-    ArrowLeftIcon, 
-    CheckCircleIcon, 
-    XCircleIcon, 
-    ExclamationTriangleIcon, 
-    MapPinIcon,
-    CalendarIcon,
-    DocumentTextIcon,
-    CameraIcon,
-    PlayIcon,
-    XMarkIcon,
-    CheckIcon,
-    PhotoIcon
+import {
+    ArrowLeftIcon, MapPinIcon, CalendarIcon,
+    DocumentTextIcon, PhotoIcon, CameraIcon,
+    ExclamationTriangleIcon, XMarkIcon, CheckIcon
 } from '@heroicons/react/24/outline';
 
-// --- 1. COMPONENTE: MODAL DE NOTIFICACIÓN (Success/Error) ---
-const AlertModal: React.FC<{
-    isOpen: boolean;
-    type: 'success' | 'error';
-    title: string;
-    message: string;
-    onClose: () => void;
-}> = ({ isOpen, type, title, message, onClose }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] transition-opacity">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl transform scale-100 transition-transform border border-gray-100">
-                <div className="flex flex-col items-center text-center">
-                    {type === 'success' ? (
-                        <div className="bg-green-100 p-3 rounded-full mb-4">
-                            <CheckCircleIcon className="h-10 w-10 text-green-600" />
-                        </div>
-                    ) : (
-                        <div className="bg-red-100 p-3 rounded-full mb-4">
-                            <XCircleIcon className="h-10 w-10 text-red-600" />
-                        </div>
-                    )}
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-                    <p className="text-gray-500 mb-6 leading-relaxed">{message}</p>
-                    <button
-                        onClick={onClose}
-                        className={`px-6 py-2.5 rounded-xl text-white font-semibold w-full transition-colors shadow-md ${
-                            type === 'success' ? 'bg-green-600 hover:bg-green-700 shadow-green-200' : 'bg-red-600 hover:bg-red-700 shadow-red-200'
-                        }`}
-                    >
-                        Entendido
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
+import UiButton from '../components/ui/UiButton';
+import UiCard from '../components/ui/UiCard';
+import UiField from '../components/ui/UiField';
+import UiModal from '../components/ui/UiModal';
 
-// --- 2. COMPONENTE: MODAL DE CONFIRMACIÓN (Yes/No) ---
-const ConfirmModal: React.FC<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    onConfirm: () => void;
-    onCancel: () => void;
-    confirmText?: string;
-    cancelText?: string;
-    isDestructive?: boolean;
-}> = ({ isOpen, title, message, onConfirm, onCancel, confirmText = "Confirmar", cancelText = "Cancelar", isDestructive = false }) => {
-    if (!isOpen) return null;
-    return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60]">
-            <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-gray-100">
-                <div className="flex flex-col items-center text-center">
-                    <div className="bg-yellow-50 p-3 rounded-full mb-4">
-                        <ExclamationTriangleIcon className="h-10 w-10 text-yellow-500" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-                    <p className="text-gray-500 mb-6 leading-relaxed">{message}</p>
-                    <div className="flex space-x-3 w-full">
-                        <button
-                            onClick={onCancel}
-                            className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-semibold transition-colors"
-                        >
-                            {cancelText}
-                        </button>
-                        <button
-                            onClick={onConfirm}
-                            className={`flex-1 px-4 py-2.5 text-white rounded-xl font-semibold shadow-md transition-colors ${
-                                isDestructive ? 'bg-red-600 hover:bg-red-700 shadow-red-200' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-200'
-                            }`}
-                        >
-                            {confirmText}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- 3. PÁGINA PRINCIPAL ---
 const IncidentDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    
+
+    // --- ESTADOS ---
     const [incident, setIncident] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [processing, setProcessing] = useState(false);
 
-    // UI State (Modals)
+    // --- MODALES ---
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
-    
-    // Notification & Confirm State
-    const [notification, setNotification] = useState({ isOpen: false, type: 'success' as 'success'|'error', title: '', message: '' });
-    const [confirmData, setConfirmData] = useState<{isOpen: boolean, title: string, message: string, action: () => void} | null>(null);
 
-    // Form Data State
+    // --- FORMULARIOS ---
     const [comentarioFinal, setComentarioFinal] = useState('');
+    const [evidenciaNombre, setEvidenciaNombre] = useState('');
     const [rejectReason, setRejectReason] = useState('');
     const [evidenciaFiles, setEvidenciaFiles] = useState<File[]>([]);
 
-    const [processing, setProcessing] = useState(false);
-
-    // --- Helpers ---
-    const notify = (type: 'success'|'error', title: string, message: string) => {
-        setNotification({ isOpen: true, type, title, message });
-    };
-    const closeConfirm = () => setConfirmData(null);
-
-    // --- Fetching ---
+    // --- CARGA DE DATOS ---
     const fetchIncident = async () => {
         try {
             setLoading(true);
             const data = await CuadrillaService.getIncidenciaById(Number(id));
             setIncident(data);
         } catch (err) {
+            console.error(err);
             setError('No se pudo cargar la incidencia.');
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { if(id) fetchIncident(); }, [id]);
+    useEffect(() => {
+        if (id) fetchIncident();
+    }, [id]);
 
-    // --- Handlers (Actions) ---
-    const handleStartClick = () => {
-        setConfirmData({
-            isOpen: true,
-            title: '¿Iniciar Trabajo?',
-            message: 'El estado cambiará a "En Proceso" y se notificará el inicio de labores.',
-            action: async () => {
-                try {
-                    setProcessing(true);
-                    closeConfirm();
-                    await CuadrillaService.iniciarIncidencia(Number(id));
-                    await fetchIncident();
-                    notify('success', 'Trabajo Iniciado', 'La incidencia ahora está en proceso.');
-                } catch (error) {
-                    notify('error', 'Error', 'No se pudo iniciar la incidencia.');
-                } finally {
-                    setProcessing(false);
-                }
-            }
-        });
+    // --- LÓGICA DE ACCIONES ---
+
+    const handleStartClick = async () => {
+        if (!window.confirm('¿Desea iniciar el trabajo en esta incidencia?')) return;
+
+        try {
+            setProcessing(true);
+            await CuadrillaService.iniciarIncidencia(Number(id));
+            await fetchIncident();
+        } catch (e) {
+            console.error(e);
+            alert('Error al iniciar la incidencia. Intente nuevamente.');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     const handleUploadEvidence = async () => {
-        if (evidenciaFiles.length === 0) {
-            notify('error', 'Sin archivos', 'Selecciona al menos una foto.');
-            return;
-        }
+        if (evidenciaFiles.length === 0) return;
+
         try {
             setProcessing(true);
             const formData = new FormData();
-            evidenciaFiles.forEach(file => formData.append('evidencias', file));
+
+            if (evidenciaNombre.trim()) {
+                formData.append('nombre', evidenciaNombre);
+            }
+
+            evidenciaFiles.forEach(file => {
+                formData.append('evidencias', file);
+            });
+
             await CuadrillaService.subirEvidencia(Number(id), formData);
-            setShowUploadModal(false);
+
+            // Limpiar y cerrar
             setEvidenciaFiles([]);
+            setEvidenciaNombre('');
+            setShowUploadModal(false);
             await fetchIncident();
-            notify('success', 'Evidencia Subida', 'Las fotos se han guardado correctamente.');
-        } catch (error) {
-            notify('error', 'Error', 'Falló la subida de archivos.');
+
+        } catch (e) {
+            console.error(e);
+            alert('Error al subir las evidencias.');
         } finally {
             setProcessing(false);
         }
@@ -188,22 +102,19 @@ const IncidentDetailPage: React.FC = () => {
 
     const handleFinalizeAction = async () => {
         if (!comentarioFinal.trim()) {
-            notify('error', 'Campo Requerido', 'Por favor escribe un comentario de cierre.');
+            alert('Debe ingresar un comentario de cierre.');
             return;
         }
-        if (!incident.multimedias || incident.multimedias.length === 0) {
-            notify('error', 'Faltan Evidencias', 'Es obligatorio subir fotos antes de finalizar.');
-            return;
-        }
+
         try {
             setProcessing(true);
             await CuadrillaService.finalizarIncidencia(Number(id), comentarioFinal);
             setShowFinalizeModal(false);
             setComentarioFinal('');
-            notify('success', '¡Tarea Completada!', 'La incidencia ha sido finalizada exitosamente.');
             await fetchIncident();
-        } catch (error) {
-            notify('error', 'Error', 'No se pudo finalizar la incidencia.');
+        } catch (e) {
+            console.error(e);
+            alert('Error al finalizar la incidencia.');
         } finally {
             setProcessing(false);
         }
@@ -211,311 +122,278 @@ const IncidentDetailPage: React.FC = () => {
 
     const handleRejectAction = async () => {
         if (!rejectReason.trim()) {
-            notify('error', 'Campo Requerido', 'Debes indicar el motivo del rechazo.');
+            alert('Debe ingresar el motivo del rechazo.');
             return;
         }
+
         try {
             setProcessing(true);
             await CuadrillaService.rechazarIncidencia(Number(id), { motivo_rechazo: rejectReason });
             setShowRejectModal(false);
-            notify('success', 'Incidencia Rechazada', 'El estado ha sido actualizado.');
-            setTimeout(() => navigate('/cuadrilla/incidencias'), 2000);
-        } catch (error) {
-            notify('error', 'Error', 'No se pudo rechazar.');
+            navigate('/cuadrilla/incidencias');
+        } catch (e) {
+            console.error(e);
+            alert('Error al rechazar la incidencia.');
         } finally {
             setProcessing(false);
         }
     };
 
+    // --- HELPERS DE ARCHIVOS ---
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) setEvidenciaFiles(p => [...p, ...Array.from(e.target.files!)]);
-    };
-    const removeFile = (i: number) => setEvidenciaFiles(p => p.filter((_, idx) => idx !== i));
-
-    // --- Styles Helper ---
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'finalizada': return 'bg-green-100 text-green-800 border-green-200 ring-green-500';
-            case 'en_proceso': return 'bg-yellow-100 text-yellow-800 border-yellow-200 ring-yellow-500';
-            case 'rechazada': return 'bg-red-100 text-red-800 border-red-200 ring-red-500';
-            default: return 'bg-gray-100 text-gray-800 border-gray-200 ring-gray-500';
+        if (e.target.files) {
+            setEvidenciaFiles(prev => [...prev, ...Array.from(e.target.files!)]);
         }
     };
 
-    if (loading) return <div className="flex h-screen items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-    if (error || !incident) return <div className="p-8 text-center text-red-600 bg-red-50 rounded m-4">{error}</div>;
+    const removeFile = (index: number) => {
+        setEvidenciaFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    // --- HELPERS DE DISEÑO ---
+    const getStatusBadge = (status: string) => {
+        const map: any = {
+            'finalizada': { bg: 'success', text: 'Finalizada' },
+            'en_proceso': { bg: 'warning', text: 'En Proceso' },
+            'rechazada': { bg: 'danger', text: 'Rechazada' },
+            'pendiente': { bg: 'secondary', text: 'Pendiente' }
+        };
+        const st = map[status] || map['pendiente'];
+        return (
+            <Badge
+                bg={st.bg}
+                text={status === 'en_proceso' ? 'dark' : 'white'}
+                className="px-3 py-2 rounded-pill shadow-sm text-uppercase fw-bold"
+            >
+                {st.text}
+            </Badge>
+        );
+    };
+
+    if (loading) {
+        return (
+            <div className="vh-100 d-flex justify-content-center align-items-center">
+                <Spinner animation="border" variant="primary" />
+            </div>
+        );
+    }
+
+    if (error || !incident) {
+        return (
+            <Container className="py-5">
+                <Alert variant="danger">{error || 'Incidencia no encontrada'}</Alert>
+                <UiButton onClick={() => navigate('/cuadrilla/incidencias')}>Volver</UiButton>
+            </Container>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-20 p-6 md:p-8">
-            {/* GLOBAL MODALS */}
-            <AlertModal isOpen={notification.isOpen} type={notification.type} title={notification.title} message={notification.message} onClose={() => setNotification(p => ({...p, isOpen: false}))} />
-            <ConfirmModal isOpen={!!confirmData} title={confirmData?.title || ''} message={confirmData?.message || ''} onConfirm={confirmData?.action || (() => {})} onCancel={closeConfirm} />
+        <div className="bg-light min-vh-100 py-5">
+            <Container>
+                {/* BOTÓN VOLVER */}
+                <div className="mb-4">
+                    <button
+                        onClick={() => navigate('/cuadrilla/incidencias')}
+                        className="btn btn-link text-decoration-none text-secondary p-0 d-flex align-items-center fw-bold small"
+                    >
+                        <ArrowLeftIcon style={{ width: 16 }} className="me-2" /> Volver al listado
+                    </button>
+                </div>
 
-            {/* HEADER NAVIGATION */}
-            <div className="max-w-6xl mx-auto mb-6">
-                <button 
-                    onClick={() => navigate('/cuadrilla/incidencias')} 
-                    className="group flex items-center text-gray-500 hover:text-blue-600 transition-colors font-medium mb-4"
-                >
-                    <ArrowLeftIcon className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-                    Volver al listado
-                </button>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {/* ENCABEZADO Y ACCIONES */}
+                <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-5 gap-4">
                     <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-gray-900">Incidencia #{incident.id}</h1>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${getStatusColor(incident.estado)}`}>
-                                {incident.estado.replace('_', ' ')}
-                            </span>
+                        <div className="d-flex align-items-center gap-3 mb-2">
+                            <h1 className="fw-bold text-dark mb-0 display-6">Incidencia #{incident.id}</h1>
+                            {getStatusBadge(incident.estado)}
                         </div>
-                        <p className="text-gray-500 mt-1 flex items-center gap-2">
-                            <CalendarIcon className="h-4 w-4" />
+                        <div className="text-muted d-flex align-items-center small">
+                            <CalendarIcon style={{ width: 18 }} className="me-2" />
                             Creada el {new Date(incident.creadoEl).toLocaleDateString()}
-                        </p>
+                        </div>
                     </div>
 
-                    {/* ACTION BUTTONS BAR */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className="d-flex gap-2 flex-wrap">
                         {incident.estado === 'pendiente' && (
-                            <button 
-                                onClick={handleStartClick}
-                                disabled={processing}
-                                className="flex items-center bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:shadow-none"
-                            >
-                                {processing ? <span className="animate-pulse">Procesando...</span> : <><PlayIcon className="h-5 w-5 mr-2" /> Iniciar Trabajo</>}
-                            </button>
+                            <UiButton onClick={handleStartClick} loading={processing} className="px-4 py-2">
+                                Iniciar Trabajo
+                            </UiButton>
                         )}
-
                         {incident.estado === 'en_proceso' && (
                             <>
-                                <button 
-                                    onClick={() => setShowRejectModal(true)}
-                                    className="flex items-center bg-white border border-red-200 text-red-600 px-4 py-2.5 rounded-xl font-medium hover:bg-red-50 transition-colors"
-                                >
-                                    <XMarkIcon className="h-5 w-5 mr-2" /> Rechazar
-                                </button>
-                                <button 
-                                    onClick={() => setShowUploadModal(true)}
-                                    className="flex items-center bg-white border border-blue-200 text-blue-600 px-4 py-2.5 rounded-xl font-medium hover:bg-blue-50 transition-colors"
-                                >
-                                    <CameraIcon className="h-5 w-5 mr-2" /> Subir Fotos
-                                </button>
-                                <button 
-                                    onClick={() => setShowFinalizeModal(true)}
-                                    className="flex items-center bg-green-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-green-700 shadow-lg shadow-green-200 transition-all"
-                                >
-                                    <CheckIcon className="h-5 w-5 mr-2" /> Finalizar Tarea
-                                </button>
+                                <UiButton variant="outline-danger" onClick={() => setShowRejectModal(true)} className="px-3">
+                                    <XMarkIcon style={{ width: 20 }} className="me-1" /> Rechazar
+                                </UiButton>
+                                <UiButton variant="outline-primary" onClick={() => setShowUploadModal(true)} className="px-3">
+                                    <CameraIcon style={{ width: 20 }} className="me-1" /> Subir Fotos
+                                </UiButton>
+                                <UiButton variant="success" onClick={() => setShowFinalizeModal(true)} className="px-4 text-white">
+                                    <CheckIcon style={{ width: 20 }} className="me-1" /> Finalizar Tarea
+                                </UiButton>
                             </>
                         )}
                     </div>
                 </div>
-            </div>
 
-            {/* MAIN CONTENT GRID */}
-            <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* LEFT COLUMN: DETAILS */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                            <DocumentTextIcon className="h-5 w-5 mr-2 text-blue-500" />
-                            Detalles de la Incidencia
-                        </h2>
-                        
-                        <div className="space-y-6">
-                            <div>
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Título del Problema</label>
-                                <p className="text-xl font-medium text-gray-900 mt-1">{incident.titulo}</p>
-                            </div>
-                            
-                            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">Descripción</label>
-                                <p className="text-gray-700 leading-relaxed">{incident.descripcion}</p>
+                {/* GRID DE INFORMACIÓN */}
+                <Row className="g-4">
+                    {/* DETALLES */}
+                    <Col lg={8}>
+                        <UiCard header={<><DocumentTextIcon style={{ width: 20 }} className="me-2 text-primary" /> Detalles de la Incidencia</>}>
+                            <div className="mb-4">
+                                <label className="text-muted small fw-bold text-uppercase mb-1" style={{ fontSize: '0.7rem' }}>Título del Problema</label>
+                                <h4 className="text-dark fw-bold mb-0">{incident.titulo}</h4>
                             </div>
 
-                            <div className="flex items-start gap-3">
-                                <div className="bg-blue-50 p-2 rounded-lg">
-                                    <MapPinIcon className="h-6 w-6 text-blue-600" />
+                            <div className="p-4 bg-light rounded-4 border-0 mb-4">
+                                <label className="text-muted small fw-bold text-uppercase d-block mb-2" style={{ fontSize: '0.7rem' }}>Descripción</label>
+                                <p className="mb-0 text-dark fs-6" style={{ lineHeight: 1.6 }}>{incident.descripcion}</p>
+                            </div>
+
+                            <div className="d-flex align-items-center p-3 rounded-3" style={{ backgroundColor: '#fffbf0' }}>
+                                <div className="bg-white p-2 rounded-circle me-3 shadow-sm text-primary">
+                                    <MapPinIcon style={{ width: 24 }} />
                                 </div>
                                 <div>
-                                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Ubicación</label>
-                                    <p className="text-gray-900 font-medium">{incident.ubicacion || incident.direccion?.nombre_direccion || 'Ubicación no especificada'}</p>
+                                    <label className="text-muted small fw-bold text-uppercase mb-0" style={{ fontSize: '0.7rem' }}>Ubicación</label>
+                                    <p className="mb-0 fw-medium text-dark fs-5">{incident.ubicacion || 'No especificada'}</p>
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                        </UiCard>
 
-                    {/* REJECTION NOTE IF EXISTS */}
-                    {incident.motivo_rechazo && (
-                        <div className="bg-red-50 rounded-2xl border border-red-100 p-6">
-                            <h3 className="text-red-800 font-bold flex items-center mb-2">
-                                <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
-                                Nota de Resolución / Rechazo
-                            </h3>
-                            <p className="text-red-700">{incident.motivo_rechazo}</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* RIGHT COLUMN: EVIDENCE */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full">
-                        <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                            <PhotoIcon className="h-5 w-5 mr-2 text-blue-500" />
-                            Galería de Evidencias
-                        </h2>
-
-                        {incident.multimedias && incident.multimedias.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-3">
-                                {incident.multimedias.map((media: any) => (
-                                    <a 
-                                        key={media.id} 
-                                        href={media.url} 
-                                        target="_blank" 
-                                        rel="noreferrer" 
-                                        className="group relative aspect-square rounded-xl overflow-hidden border border-gray-200 cursor-zoom-in"
-                                    >
-                                        <img 
-                                            src={media.url} 
-                                            alt="evidencia" 
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                                        />
-                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                            <div className="bg-white/90 p-1.5 rounded-full shadow-sm">
-                                                <ArrowLeftIcon className="h-4 w-4 text-gray-900 rotate-180" />
-                                            </div>
-                                        </div>
-                                    </a>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
-                                <PhotoIcon className="h-12 w-12 text-gray-300 mb-3" />
-                                <p className="text-gray-500 font-medium">Sin evidencias aún</p>
-                                <p className="text-sm text-gray-400 mt-1">Usa el botón "Subir Fotos" para agregar pruebas del trabajo.</p>
+                        {incident.motivo_rechazo && (
+                            <div className="mt-4">
+                                <Alert variant="danger" className="border-0 shadow-sm rounded-3">
+                                    <Alert.Heading className="h6 fw-bold d-flex align-items-center mb-2">
+                                        <ExclamationTriangleIcon style={{ width: 20 }} className="me-2" /> Motivo de Rechazo
+                                    </Alert.Heading>
+                                    <p className="mb-0 small opacity-75">{incident.motivo_rechazo}</p>
+                                </Alert>
                             </div>
                         )}
-                    </div>
-                </div>
-            </div>
+                    </Col>
 
-            {/* --- ACTION MODALS --- */}
-
-            {/* 1. UPLOAD MODAL */}
-            {showUploadModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div className="bg-blue-600 p-5 flex items-center justify-between">
-                            <h3 className="text-white font-bold text-lg flex items-center"><CameraIcon className="h-6 w-6 mr-2"/> Subir Evidencias</h3>
-                            <button onClick={() => {setShowUploadModal(false); setEvidenciaFiles([]);}} className="text-blue-100 hover:text-white"><XMarkIcon className="h-6 w-6"/></button>
-                        </div>
-                        <div className="p-6 space-y-5">
-                            <div className="border-2 border-dashed border-blue-200 bg-blue-50 rounded-xl p-8 text-center hover:bg-blue-100 transition-colors cursor-pointer relative group">
-                                <input type="file" multiple accept="image/*" onChange={handleFileChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-                                <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm group-hover:scale-110 transition-transform">
-                                    <CameraIcon className="h-6 w-6 text-blue-600" />
-                                </div>
-                                <p className="text-blue-900 font-medium">Haz clic para seleccionar fotos</p>
-                                <p className="text-blue-600 text-sm mt-1">JPG, PNG permitidos</p>
-                            </div>
-
-                            {evidenciaFiles.length > 0 && (
-                                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-gray-50 rounded-lg border border-gray-100">
-                                    {evidenciaFiles.map((f, i) => (
-                                        <div key={i} className="bg-white text-xs px-3 py-1.5 rounded-full flex items-center border border-gray-200 shadow-sm">
-                                            <span className="truncate max-w-[120px]">{f.name}</span>
-                                            <button onClick={() => removeFile(i)} className="ml-2 text-red-500 hover:text-red-700"><XMarkIcon className="h-3 w-3"/></button>
-                                        </div>
+                    {/* GALERÍA DE EVIDENCIAS */}
+                    <Col lg={4}>
+                        <UiCard header={<><PhotoIcon style={{ width: 20 }} className="me-2 text-primary" /> Galería de Evidencias</>}>
+                            {incident.multimedias && incident.multimedias.length > 0 ? (
+                                <div className="d-flex flex-column gap-3">
+                                    {incident.multimedias.map((media: any) => (
+                                        <a key={media.id} href={media.url} target="_blank" rel="noreferrer" className="d-block text-decoration-none shadow-sm rounded-3 overflow-hidden position-relative">
+                                            <div style={{ height: '200px', width: '100%' }}>
+                                                <Image src={media.url} alt={media.nombre} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                            {media.nombre && (
+                                                <div className="p-2 bg-white border-top text-truncate small text-center fw-bold text-dark">
+                                                    {media.nombre}
+                                                </div>
+                                            )}
+                                        </a>
                                     ))}
                                 </div>
+                            ) : (
+                                <div className="text-center py-5 bg-light rounded-3 border border-dashed">
+                                    <PhotoIcon className="text-secondary mb-3" style={{ width: 48, opacity: 0.3 }} />
+                                    <p className="text-muted small mb-0 fw-medium">No hay evidencias</p>
+                                </div>
                             )}
-                            
-                            <button 
-                                onClick={handleUploadEvidence} 
-                                disabled={processing || evidenciaFiles.length === 0}
-                                className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 disabled:opacity-50 disabled:shadow-none transition-all"
-                            >
-                                {processing ? 'Subiendo...' : `Subir ${evidenciaFiles.length > 0 ? evidenciaFiles.length : ''} Foto(s)`}
-                            </button>
+                        </UiCard>
+                    </Col>
+                </Row>
+            </Container>
+
+            {/* --- MODAL SUBIR FOTOS --- */}
+            <UiModal show={showUploadModal} handleClose={() => setShowUploadModal(false)} title="Subir Evidencias" size="lg">
+                <div className="text-center p-5 bg-white rounded-4 border border-2 border-dashed border-primary mx-auto" style={{ maxWidth: '500px', position: 'relative' }}>
+                    <input
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="position-absolute top-0 start-0 w-100 h-100 opacity-0"
+                        style={{ cursor: 'pointer' }}
+                    />
+                    <div className="mb-3 text-primary bg-primary bg-opacity-10 p-3 rounded-circle d-inline-flex">
+                        <CameraIcon style={{ width: 40 }} />
+                    </div>
+                    <h5 className="fw-bold text-primary mb-1">Haz clic para seleccionar fotos</h5>
+                    <p className="text-muted small mb-0">JPG, PNG permitidos</p>
+                </div>
+
+                <div className="mt-4 px-4">
+                    <UiField
+                        label="Título opcional para las evidencias"
+                        placeholder="Ej: Reparación completada"
+                        value={evidenciaNombre}
+                        onChange={e => setEvidenciaNombre(e.target.value)}
+                    />
+                </div>
+
+                {evidenciaFiles.length > 0 && (
+                    <div className="text-center mt-3">
+                        <Badge bg="success" className="px-3 py-2 fw-normal">
+                            {evidenciaFiles.length} archivo(s) listo(s) para subir
+                        </Badge>
+                        <div className="d-flex flex-wrap gap-2 justify-content-center mt-2">
+                            {evidenciaFiles.map((f, i) => (
+                                <span key={i} className="badge bg-light text-dark border d-flex align-items-center">
+                                    {f.name}
+                                    <span className="ms-2 cursor-pointer text-danger" onClick={() => removeFile(i)} style={{ cursor: 'pointer' }}>×</span>
+                                </span>
+                            ))}
                         </div>
                     </div>
+                )}
+
+                <div className="d-grid gap-2 mt-4 col-lg-6 mx-auto">
+                    <UiButton
+                        onClick={handleUploadEvidence}
+                        loading={processing}
+                        disabled={evidenciaFiles.length === 0}
+                        className="py-3 fs-5"
+                        isBlock
+                    >
+                        Subir Foto(s)
+                    </UiButton>
                 </div>
-            )}
+            </UiModal>
 
-            {/* 2. FINALIZE MODAL */}
-            {showFinalizeModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div className="bg-green-600 p-5 flex items-center justify-between">
-                            <h3 className="text-white font-bold text-lg flex items-center"><CheckIcon className="h-6 w-6 mr-2"/> Finalizar Incidencia</h3>
-                            <button onClick={() => setShowFinalizeModal(false)} className="text-green-100 hover:text-white"><XMarkIcon className="h-6 w-6"/></button>
-                        </div>
-                        <div className="p-6 space-y-5">
-                            <div className="bg-green-50 text-green-800 p-4 rounded-xl text-sm border border-green-100 flex items-start">
-                                <CheckCircleIcon className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0 text-green-600"/>
-                                <span>Asegúrate de haber subido todas las fotos necesarias antes de finalizar.</span>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Comentario de Cierre *</label>
-                                <textarea 
-                                    value={comentarioFinal}
-                                    onChange={(e) => setComentarioFinal(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all resize-none"
-                                    rows={4}
-                                    placeholder="Describe brevemente la solución aplicada..."
-                                />
-                            </div>
-
-                            <button 
-                                onClick={handleFinalizeAction} 
-                                disabled={processing}
-                                className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 shadow-lg shadow-green-200 disabled:opacity-50 disabled:shadow-none transition-all"
-                            >
-                                {processing ? 'Finalizando...' : 'Confirmar Finalización'}
-                            </button>
-                        </div>
-                    </div>
+            {/* --- MODAL FINALIZAR --- */}
+            <UiModal show={showFinalizeModal} handleClose={() => setShowFinalizeModal(false)} title="Finalizar Tarea">
+                <Alert variant="info" className="d-flex align-items-center p-2 small mb-3 border-0 shadow-sm rounded-3">
+                    <CheckIcon style={{ width: 18 }} className="me-2" /> Recuerda subir las fotos antes de finalizar.
+                </Alert>
+                <UiField
+                    as="textarea"
+                    rows={4}
+                    label="Comentario Final *"
+                    value={comentarioFinal}
+                    onChange={e => setComentarioFinal(e.target.value)}
+                    placeholder="Describe el trabajo realizado..."
+                />
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                    <UiButton variant="light" onClick={() => setShowFinalizeModal(false)}>Cancelar</UiButton>
+                    <UiButton variant="success" onClick={handleFinalizeAction} loading={processing} className="text-white">Confirmar Finalización</UiButton>
                 </div>
-            )}
+            </UiModal>
 
-            {/* 3. REJECT MODAL */}
-            {showRejectModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                        <div className="bg-red-600 p-5 flex items-center justify-between">
-                            <h3 className="text-white font-bold text-lg flex items-center"><XCircleIcon className="h-6 w-6 mr-2"/> Rechazar Incidencia</h3>
-                            <button onClick={() => setShowRejectModal(false)} className="text-red-100 hover:text-white"><XMarkIcon className="h-6 w-6"/></button>
-                        </div>
-                        <div className="p-6 space-y-5">
-                            <p className="text-sm text-gray-600">La incidencia volverá a estado "Rechazada" y se notificará al administrador.</p>
-                            
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Motivo del Rechazo *</label>
-                                <textarea 
-                                    value={rejectReason}
-                                    onChange={(e) => setRejectReason(e.target.value)}
-                                    className="w-full border border-gray-300 rounded-xl p-4 focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all resize-none"
-                                    rows={3}
-                                    placeholder="Explica por qué no se puede realizar el trabajo..."
-                                />
-                            </div>
-
-                            <button 
-                                onClick={handleRejectAction} 
-                                disabled={processing}
-                                className="w-full py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-lg shadow-red-200 disabled:opacity-50 disabled:shadow-none transition-all"
-                            >
-                                {processing ? 'Procesando...' : 'Confirmar Rechazo'}
-                            </button>
-                        </div>
-                    </div>
+            {/* --- MODAL RECHAZAR --- */}
+            <UiModal show={showRejectModal} handleClose={() => setShowRejectModal(false)} title="Rechazar Incidencia">
+                <UiField
+                    as="textarea"
+                    rows={4}
+                    label="Motivo del Rechazo *"
+                    value={rejectReason}
+                    onChange={e => setRejectReason(e.target.value)}
+                    placeholder="Explica por qué rechazas la tarea..."
+                />
+                <div className="d-flex justify-content-end gap-2 mt-3">
+                    <UiButton variant="light" onClick={() => setShowRejectModal(false)}>Cancelar</UiButton>
+                    <UiButton variant="danger" onClick={handleRejectAction} loading={processing}>Confirmar Rechazo</UiButton>
                 </div>
-            )}
+            </UiModal>
         </div>
     );
-}
+};
 
 export default IncidentDetailPage;
